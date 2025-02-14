@@ -22,7 +22,7 @@ jobs:
    run: docker pull zaproxy/zap-stable
   - name: Run ZAP Scan
    run: |
-    docker run --rm -t -i -v $(pwd)/zap-session:/zap/wrk/:rw -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t http://testphp.vulnweb.com/
+    docker run --rm -t -i -v $(pwd)/zap-session:/zap/wrk/:rw -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/
   - name: Upload ZAP Report
    uses: actions/upload-artifact@v3
    with:
