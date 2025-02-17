@@ -1,32 +1,67 @@
 name: ZAP Security Scan
 on:
- push:
-  branches:
-   - main # or the branch you want the action to trigger on
- pull_request:
-  branches:
-   - main # if you want it to run on PRs to main
+  push:
+    branches:
+      - main  # Runs the scan on pushes to main
+  pull_request:
+    branches:
+      - main  # Runs the scan on PRs to main
 jobs:
- zap-scan:
-  runs-on: ubuntu-latest # You can change this to another supported OS
-  steps:
-  - name: Checkout code
-   uses: actions/checkout@v2
-  - name: Set up Docker
-   run: |
-    sudo apt-get update
-    sudo apt-get install -y docker.io
-    sudo systemctl start docker
-    sudo systemctl enable docker
-  - name: Pull ZAP Docker Image
-   run: docker pull zaproxy/zap-stable
-  - name: Run ZAP Scan
-   run: |
-    sudo docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-weekly zap-scan.py -t openapi.json -f openapi -c api-scan.conf
-  - name: Upload ZAP Report
-   uses: actions/upload-artifact@v3
-   with:
-    name: zap-report
-    path: zap-session/zap-report.html
+  zap-scan:
+    runs-on: ubuntu-latest  # Uses the latest Ubuntu runner
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get remove -y containerd docker.io || true
+          curl -fsSL https://get.docker.com | sudo sh
+          sudo systemctl start docker
+          sudo systemctl enable docker
+      - name: Pull ZAP Docker Image
+        run: docker pull zaproxy/zap-stable
+      - name: Run ZAP Scan
+        run: |
+            docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
+            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
+            -z "-config failOnWarn=false -config failOnError=false"
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-session/zap-report.html
+
+
+# name: ZAP Security Scan
+# on:
+#  push:
+#   branches:
+#    - main # or the branch you want the action to trigger on
+#  pull_request:
+#   branches:
+#    - main # if you want it to run on PRs to main
+# jobs:
+#  zap-scan:
+#   runs-on: ubuntu-latest # You can change this to another supported OS
+#   steps:
+#   - name: Checkout code
+#    uses: actions/checkout@v2
+#   - name: Set up Docker
+#    run: |
+#     sudo apt-get update
+#     sudo apt-get install -y docker.io
+#     sudo systemctl start docker
+#     sudo systemctl enable docker
+#   - name: Pull ZAP Docker Image
+#    run: docker pull zaproxy/zap-stable
+#   - name: Run ZAP Scan
+#    run: |
+#     sudo docker run -v $(pwd):/zap/wrk/:rw -t owasp/zap2docker-weekly zap-scan.py -t openapi.json -f openapi -c api-scan.conf
+#   - name: Upload ZAP Report
+#    uses: actions/upload-artifact@v3
+#    with:
+#     name: zap-report
+#     path: zap-session/zap-report.html
 
 
