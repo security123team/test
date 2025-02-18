@@ -38,18 +38,20 @@ jobs:
           echo "Listing files in zap-session directory:"
           ls -l zap-session  # List files in zap-session to verify if zap_report.html exists
 
-      - name: Debug: Check if report file exists in zap-session directory
+      - name: Debug: Check contents of the container directory
         run: |
+          echo "Listing files inside the Docker container's /zap/wrk directory:"
+          docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw zaproxy/zap-stable ls -l /zap/wrk  # List files inside the Docker container's /zap/wrk directory to ensure report generation
+
+      - name: Check if Report Exists
+        run: |
+          echo "Checking if the report exists at zap-session/zap_report.html..."
           if [ -f zap-session/zap_report.html ]; then
-            echo "ZAP report found."
+            echo "Report found."
           else
-            echo "ZAP report not found!"
+            echo "Report not found! Exiting."
             exit 1
           fi
-
-      - name: Debug: Check ZAP scan logs for errors
-        run: |
-          docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw zaproxy/zap-stable tail -n 50 /zap/wrk/zap-session/zap_report.html || true  # Check the scan logs for any errors
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
