@@ -28,7 +28,7 @@ jobs:
       - name: Run ZAP Scan
         run: |
           mkdir -p zap-session
-          # Ensure the output path inside the container maps correctly to the host
+          # Run the ZAP scan, make sure the paths inside the container are correct
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
             -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
             -o /zap/wrk/zap-session/zap-report.html || true  # Ensures workflow does not fail on warnings
@@ -36,15 +36,16 @@ jobs:
       - name: Wait for ZAP to complete the scan
         run: |
           echo "Waiting for ZAP scan to finish..."
-          sleep 180  # Wait for 3 minutes to ensure the scan completes
+          sleep 300  # Increase wait time to ensure the scan completes, set to 5 minutes
 
-      - name: Check if report exists
+      - name: Check if the report exists and provide meaningful output
         run: |
-          # Check if the report exists and provide meaningful output
+          # Check if the report exists
           if [ -f $(pwd)/zap-session/zap-report.html ]; then
             echo "Report found."
           else
             echo "Report not found!"
+            ls -al $(pwd)/zap-session/  # List the contents of the zap-session folder for debugging
             exit 1
           fi
 
