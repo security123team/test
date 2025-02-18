@@ -1,4 +1,5 @@
 name: ZAP Security Scan
+
 on:
   push:
     branches:
@@ -6,9 +7,11 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   zap-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,14 +33,31 @@ jobs:
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
             -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/zap_report.html || true  # Output report to zap_report.html
 
-      - name: List files in zap-session
-        run: ls -l zap-session  # List files in zap-session directory to verify report generation
+      - name: Debug: List files in zap-session
+        run: |
+          echo "Listing files in zap-session directory:"
+          ls -l zap-session  # List files in zap-session to verify if zap_report.html exists
+
+      - name: Debug: Check contents of the container directory
+        run: |
+          echo "Listing files inside the Docker container's /zap/wrk directory:"
+          docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw zaproxy/zap-stable ls -l /zap/wrk  # List files inside the Docker container's /zap/wrk directory to ensure report generation
+
+      - name: Check if Report Exists
+        run: |
+          echo "Checking if the report exists at zap-session/zap_report.html..."
+          if [ -f zap-session/zap_report.html ]; then
+            echo "Report found."
+          else
+            echo "Report not found! Exiting."
+            exit 1
+          fi
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/zap_report.html  # Update path to match generated report
+          path: zap-session/zap_report.html  # Explicit path to the generated report
           if-no-files-found: warn  # Keep warning if the file doesn't exist
           compression-level: 6
           overwrite: false
