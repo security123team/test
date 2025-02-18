@@ -1,4 +1,5 @@
 name: ZAP Security Scan
+
 on:
   push:
     branches:
@@ -6,12 +7,15 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   zap-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up Docker
         run: |
           sudo apt-get update
@@ -19,16 +23,40 @@ jobs:
           curl -fsSL https://get.docker.com | sudo sh
           sudo systemctl start docker
           sudo systemctl enable docker
+
       - name: Pull ZAP Docker Image
         run: docker pull zaproxy/zap-stable
+
       - name: Run ZAP Scan
         run: |
-          mkdir -p zap-session
+          mkdir -p zap-session  # Ensure the zap-session directory exists on the host machine
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
-            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
-            || true  # Ensures workflow does not fail on warnings
+            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/zap_report.html || true  # Output report to zap_report.html
+
+      - name: Debug: List files in zap-session
+        run: |
+          echo "Listing files in zap-session directory:"
+          ls -l zap-session  # List files in zap-session to verify if zap_report.html exists
+
+      - name: Debug: Check if report file exists in zap-session directory
+        run: |
+          if [ -f zap-session/zap_report.html ]; then
+            echo "ZAP report found."
+          else
+            echo "ZAP report not found!"
+            exit 1
+          fi
+
+      - name: Debug: Check ZAP scan logs for errors
+        run: |
+          docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw zaproxy/zap-stable tail -n 50 /zap/wrk/zap-session/zap_report.html || true  # Check the scan logs for any errors
+
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/zap_report.html
+          path: zap-session/zap_report.html  # Explicit path to the generated report
+          if-no-files-found: warn  # Keep warning if the file doesn't exist
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
