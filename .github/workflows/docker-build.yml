@@ -19,6 +19,15 @@ jobs:
           echo "DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}" | sha256sum  # Mask password by hashing it
         continue-on-error: true  # Ensure the job continues even if this step fails
 
+      - name: Check for Dockerfile
+        run: |
+          if [ ! -f Dockerfile ]; then
+            echo "Dockerfile not found! Please make sure the Dockerfile exists in the root directory."
+            exit 1
+          else
+            echo "Dockerfile found."
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
