@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
         target:
-          - "https://bitscrunch.com/"
-          - "https://app.bitscrunch.com/" #new domain
+        - "https://bitscrunch.com/"
+        - "https://app.bitscrunch.com/"
     name: Scan ${{ matrix.target }}
     steps:
       - name: Checkout Repository
@@ -22,18 +22,13 @@ jobs:
           echo "10038    # Content Security Policy (CSP) Header Not Set" >> .zap/ignore-rules.tsv
           echo "10096    # Timestamp Disclosure - Unix" >> .zap/ignore-rules.tsv
           echo "40025    # Proxy Disclosure" >> .zap/ignore-rules.tsv
+        shell: bash
       - name: Extract Domain Name
         id: extract_domain
         run: |
-          DOMAIN=$(echo "${{ matrix.target }}" | sed -E 's#https?://##' | sed 's#/$##')
+          DOMAIN=$(echo "${{ matrix.target }}" | sed -E 's|https?://([^/]+).*|\1|')
           echo "Extracted Domain: $DOMAIN"
           echo "DOMAIN=$DOMAIN" >> $GITHUB_ENV
-      - name: Delete Old Report (If Exists)
-        run: |
-          if [ -f zap-reports/zap_report_${{ env.DOMAIN }}.html ]; then
-            echo "Deleting old report for ${{ env.DOMAIN }}..."
-            rm -f zap-reports/zap_report_${{ env.DOMAIN }}.html
-          fi
       - name: Run ZAP Scan
         uses: zaproxy/action-full-scan@v0.12.0
         with:
@@ -42,27 +37,12 @@ jobs:
           target: ${{ matrix.target }}
           rules_file_name: '.zap/ignore-rules.tsv'
           cmd_options: '-a'
-      - name: List Files After Scan
-        run: ls -lah
       - name: Save ZAP Report
         run: |
           mkdir -p zap-reports
-          if [ -f report_html.html ]; then
-            mv report_html.html zap-reports/zap_report_${{ env.DOMAIN }}.html
-          else
-            echo "Error: ZAP report file not found!"
-            exit 1
-          fi
-      - name: List Files in zap-reports
-        run: ls -lah zap-reports/
+          mv report_html.html zap-reports/zap_report_${{ env.DOMAIN }}.html
       - name: Upload ZAP Report as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: zap-security-reports-${{ env.DOMAIN }}-${{ github.run_id }}
-          path: zap-reports/zap_report_${{ env.DOMAIN }}.html
-
-
-
-
-
-
+          name: zap-security-reports-${{ env.DOMAIN }}
+          path: zap-reports/
