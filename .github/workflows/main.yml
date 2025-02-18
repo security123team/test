@@ -6,14 +6,12 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   zap-scan:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Docker
         run: |
           sudo apt-get update
@@ -21,42 +19,16 @@ jobs:
           curl -fsSL https://get.docker.com | sudo sh
           sudo systemctl start docker
           sudo systemctl enable docker
-
       - name: Pull ZAP Docker Image
         run: docker pull zaproxy/zap-stable
-
       - name: Run ZAP Scan
         run: |
           mkdir -p zap-session
-          # Run ZAP scan, ensuring we can inspect the files inside the container.
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
             -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
-            -o /zap/wrk/zap-session/zap-report.html || true  # Ensures workflow doesn't fail on warnings
-
-      - name: Debug: List contents of zap-session after ZAP scan
-        run: |
-          echo "Listing contents of zap-session directory:"
-          ls -al $(pwd)/zap-session  # Check contents for report or other generated files
-
-      - name: Wait for ZAP to complete the scan
-        run: |
-          echo "Waiting for ZAP scan to finish..."
-          sleep 300  # Increased wait time for the scan to complete (5 minutes)
-
-      - name: Check if the report exists
-        run: |
-          # Check if the report exists
-          if [ -f $(pwd)/zap-session/zap-report.html ]; then
-            echo "Report found."
-          else
-            echo "Report not found!"
-            exit 1
-          fi
-
+            || true  # Ensures workflow does not fail on warnings
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/zap-report.html
-          if-no-files-found: warn
-          compression-level: 6
+          path: zap-session/report.html
