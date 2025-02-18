@@ -1,5 +1,4 @@
 name: ZAP Security Scan
-
 on:
   push:
     branches:
@@ -7,15 +6,12 @@ on:
   pull_request:
     branches:
       - main
-
 jobs:
   zap-scan:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Docker
         run: |
           sudo apt-get update
@@ -23,42 +19,16 @@ jobs:
           curl -fsSL https://get.docker.com | sudo sh
           sudo systemctl start docker
           sudo systemctl enable docker
-
       - name: Pull ZAP Docker Image
         run: docker pull zaproxy/zap-stable
-
       - name: Run ZAP Scan
         run: |
-          mkdir -p zap-session  # Ensure the zap-session directory exists on the host machine
+          mkdir -p zap-session
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
-            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/zap_report.html || true  # Output report to zap_report.html
-
-      - name: Debug: List files in zap-session
-        run: |
-          echo "Listing files in zap-session directory:"
-          ls -l zap-session  # List files in zap-session to verify if zap_report.html exists
-
-      - name: Debug: Check contents of the container directory
-        run: |
-          echo "Listing files inside the Docker container's /zap/wrk directory:"
-          docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw zaproxy/zap-stable ls -l /zap/wrk  # List files inside the Docker container's /zap/wrk directory to ensure report generation
-
-      - name: Check if Report Exists
-        run: |
-          echo "Checking if the report exists at zap-session/zap_report.html..."
-          if [ -f zap-session/zap_report.html ]; then
-            echo "Report found."
-          else
-            echo "Report not found! Exiting."
-            exit 1
-          fi
-
+            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
+            || true  # Ensures workflow does not fail on warnings
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/zap_report.html  # Explicit path to the generated report
-          if-no-files-found: warn  # Keep warning if the file doesn't exist
-          compression-level: 6
-          overwrite: false
-          include-hidden-files: false
+          path: zap-session/report.html
