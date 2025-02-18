@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Docker
         run: |
           sudo apt-get update
@@ -20,21 +20,26 @@ jobs:
           curl -fsSL https://get.docker.com | sudo sh
           sudo systemctl start docker
           sudo systemctl enable docker
-      
+
       - name: Pull ZAP Docker Image
         run: docker pull zaproxy/zap-stable
 
       - name: Run ZAP Scan
         run: |
           mkdir -p zap-session
+          # Run ZAP scan and output the report to a known location
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
             -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/report.html || true  # Ensures workflow does not fail on warnings
 
       - name: List files in zap-session
-        run: ls -l zap-session  # Check if the report.html file exists
+        run: ls -l zap-session  # Check all the files in zap-session directory
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/report.html  # Ensure this matches the report file generated
+          path: zap-session/report.html  # Ensure the correct path to report.html
+          if-no-files-found: warn  # Keep warning in case the file doesn't exist
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: false
