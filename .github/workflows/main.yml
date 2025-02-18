@@ -29,16 +29,16 @@ jobs:
           mkdir -p zap-session
           # Run ZAP scan and output the report to a known location
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
-            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/report.html || true  # Ensures workflow does not fail on warnings
+            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/zap_report.html || true  # Output report to zap_report.html
 
       - name: List files in zap-session
-        run: ls -l zap-session  # Check all the files in zap-session directory
+        run: ls -l zap-session  # List all the files in zap-session to check if the report was created
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/report.html  # Ensure the correct path to report.html
+          path: zap-session/zap_report.html  # Update path to match the generated report
           if-no-files-found: warn  # Keep warning in case the file doesn't exist
           compression-level: 6
           overwrite: false
