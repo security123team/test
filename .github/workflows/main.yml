@@ -1,5 +1,4 @@
 name: ZAP Security Scan
-
 on:
   push:
     branches:
@@ -16,7 +15,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Create Ignore Rules File
         run: |
           mkdir -p .zap
@@ -25,19 +23,12 @@ jobs:
           echo "10096    # Timestamp Disclosure - Unix" >> .zap/ignore-rules.tsv
           echo "40025    # Proxy Disclosure" >> .zap/ignore-rules.tsv
         shell: bash
-
       - name: Extract Domain Name
         id: extract_domain
         run: |
           DOMAIN=$(echo "${{ matrix.target }}" | sed -E 's|https?://([^/]+).*|\1|')
           echo "Extracted Domain: $DOMAIN"
           echo "DOMAIN=$DOMAIN" >> $GITHUB_ENV
-
-      - name: Test GitHub Token Permissions
-        run: |
-          curl -H "Authorization: token ${{ secrets.TOKEN }}" https://api.github.com/repos/security123team/test
-        continue-on-error: true  # Allow to continue even if the step fails
-
       - name: Run ZAP Scan
         uses: zaproxy/action-full-scan@v0.12.0
         with:
@@ -46,12 +37,10 @@ jobs:
           target: ${{ matrix.target }}
           rules_file_name: '.zap/ignore-rules.tsv'
           cmd_options: '-a'
-
       - name: Save ZAP Report
         run: |
           mkdir -p zap-reports
           mv report_html.html zap-reports/zap_report_${{ env.DOMAIN }}.html
-
       - name: Upload ZAP Report as Artifact
         uses: actions/upload-artifact@v4
         with:
