@@ -13,6 +13,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Debug: Print Docker credentials (check in logs)
+        run: |
+          echo "DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}"
+          echo "DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}" | sha256sum  # Mask password by hashing it
+        continue-on-error: true  # Ensure the job continues even if this step fails
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
