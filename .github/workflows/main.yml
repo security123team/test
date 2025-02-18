@@ -28,18 +28,29 @@ jobs:
       - name: Run ZAP Scan
         run: |
           mkdir -p zap-session
+          # Running ZAP scan and ensuring it outputs the report in the correct location
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
             -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
-            -g "gen.conf" -z "-config api.disablekey=true" \
-            || true  # Ensures workflow does not fail on warnings
-          
-      - name: Wait for ZAP scan to complete
+            -o /zap/wrk/zap-session/zap-report.html || true  # Ensures workflow does not fail on warnings
+
+      - name: Wait for ZAP to complete the scan
         run: |
           echo "Waiting for ZAP scan to finish..."
-          sleep 60  # Adjust the sleep time based on scan duration
+          sleep 60  # Wait for 60 seconds to ensure the scan completes
+
+      - name: Check if report exists
+        run: |
+          if [ -f zap-session/zap-report.html ]; then
+            echo "Report found."
+          else
+            echo "Report not found!"
+            exit 1
+          fi
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: zap-session/zap-report.html
+          if-no-files-found: warn
+          compression-level: 6
