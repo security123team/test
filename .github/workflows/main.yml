@@ -30,10 +30,16 @@ jobs:
           mkdir -p zap-session
           docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
             -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ \
+            -g "gen.conf" -z "-config api.disablekey=true" \
             || true  # Ensures workflow does not fail on warnings
+          
+      - name: Wait for ZAP scan to complete
+        run: |
+          echo "Waiting for ZAP scan to finish..."
+          sleep 60  # Adjust the sleep time based on scan duration
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap-session/report.html
+          path: zap-session/zap-report.html
