@@ -31,4 +31,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: ZAP-Report-.html
+          path: zap-session/zap_report.html
