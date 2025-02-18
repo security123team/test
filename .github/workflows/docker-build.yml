@@ -55,3 +55,21 @@ jobs:
         run: |
           IMAGE_TAG=my-image-name:${{ github.sha }}  # Use the same tag for pushing
           docker push $IMAGE_TAG
+
+      - name: Run ZAP Scan and Generate Report
+        run: |
+          mkdir -p zap-session
+          docker run --rm -v $(pwd)/zap-session:/zap/wrk/:rw \
+            -p 8080:8080 zaproxy/zap-stable zap-full-scan.py -t https://security123team.github.io/test/ -r /zap/wrk/zap-session/zap_report.html || true  # Output report to zap_report.html
+
+      - name: Debug: List files in zap-session
+        run: ls -l zap-session  # List all files in zap-session to check if report.html is there
+
+      - name: Check if Report Exists
+        run: |
+          if [ -f zap-session/zap_report.html ]; then
+            echo "Report found."
+          else
+            echo "Report not found!"
+            exit 1
+          fi
