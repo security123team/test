@@ -37,7 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: zap-report
-          path: zap_report.html  # Update path to match generated report
+          path: zap-session/report.html  # Update path to match generated report
           if-no-files-found: warn  # Keep warning if the file doesn't exist
           compression-level: 6
           overwrite: false
