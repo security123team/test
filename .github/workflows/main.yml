@@ -36,7 +36,7 @@ jobs:
       - name: Wait for ZAP to complete the scan
         run: |
           echo "Waiting for ZAP scan to finish..."
-          sleep 60  # Wait for 60 seconds to ensure the scan completes
+          sleep 180  # Wait for 3 minutes to ensure the scan completes
 
       - name: Check if report exists
         run: |
